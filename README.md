@@ -1,4 +1,4 @@
-# Code for ''Learning protein fitness models from evolutionary and assay-labelled data''
+# Learning protein fitness models from evolutionary and assay-labelled data
 
 This repo is a collection of code and scripts for evaluating methods that combine evolutionary and assay-labelled data for protein fitness prediction.
 
@@ -13,7 +13,6 @@ For more details, please see our pre-print [Combining evolutionary and assay-lab
 - Fitness data
 - Density models
 - Predictors
-- Results
 
 
 ## Repo contents

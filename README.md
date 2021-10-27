@@ -1,12 +1,13 @@
-# Code for ''A systematic assessment of methods for combining evolutionary and assay-labelled data for protein fitness prediction''
+# Code for ''Learning protein fitness models from evolutionary and assay-labelled data''
 
-### CONFIDENTIAL FOR REVIEW PURPOSES ONLY
+This repo is a collection of code and scripts for evaluating methods that combine evolutionary and assay-labelled data for protein fitness prediction.
+
+For more details, please see our pre-print [Combining evolutionary and assay-labelled data for protein fitness prediction](https://www.biorxiv.org/content/10.1101/2021.03.28.437402v1.abstract).
 
 ## Contents
-- Overview
 - Repo contents
 - System requirements
-- Installation guide
+- Installation
 - Demo
 - Jackhmmer search
 - Fitness data
@@ -14,26 +15,19 @@
 - Predictors
 - Results
 
-## Overview
-This repo is a collection of code, scripts, and data for evaluating the methods
-that combine evolutionary and assay-labelled data for protein fitness prediction.
 
 ## Repo contents
 There are several main components of the repo.
-- `data`: Processed protein fitness data.
-- `alignments`: Processed multiple sequence alignments.
-- `scripts`: Scripts for retrieving evolutionary sequences, using jackhmmer.
-- `src`: Pipelines for training various evolutionary models, mostly based on existing
-  packages but with custom modifications when necessary. Evolutionary models
-  include Potts model (EVmutation), VAE (DeepSequence), LSTM (UniRep), and
-  Transformer (ESM).
+- `data`: Processed protein fitness data. (Only one example data set is provided here due to GitHub repo size constraints. Please download all alignments from Dryad doi:10.6078/D1K71B.)
+- `alignments`: Processed multiple sequence alignments. (Only one example alignment is provided here due to GitHub repo size constraints. Please download all alignments from Dryad doi:10.6078/D1K71B.)
+- `scripts`: Bash and Python scripts for data collection and data analysis.
+- `src`: Python code for training and evaluating the methods assessed in the paper.
   Also includes the evaluation and comparison framework of different predictors.
-- `src/predictors`: Implementations of `predictors`. Each predictor represents a prediction
-  strategy for protein fitness that depends on evolutionary data,
-  assay-labelled data, or both.
+- `environment.yml`: Software dependencies for conda environment.
+  
+When running the provided scripts, the outputs will be written to the following directories:
 - `inference`: Directory for intermediate files such as inferred sequence log likelihoods.
 - `results`: Directory for results as csv files.
-- `environment.yml`: Software dependencies for conda environment.
 
 ## System requirements
 
@@ -55,7 +49,7 @@ and Python 3.8.5.
 The (optional) slurm scripts have been tested on slurm 17.11.12.
 The list of software dependencies are provided in the `environment.yml` file.
 
-## Installation guide
+## Installation
 
 1. Create the conda environment from the environment.yml file:
 ```
@@ -83,11 +77,11 @@ The one-hot linear model is the simplest example as it only requires
 assay-labelled data. To evaluate the one-hot linear model on the Poly(A)-binding
 protein (PABP) data with 240 training examples and 20 seeds on a single core:
 ```
-    python src/evaluate.py PABP_YEAST_Fields2013-linear onehot --n_seeds=20 --n_threads=1 --n_train=240
+    python src/evaluate.py BLAT_ECOLX_Ranganathan2015-2500 onehot --n_seeds=20 --n_threads=1 --n_train=240
 ```
 
 When the program finishes, the results from the 20 runs will be available in the
-file `results/PABP_YEAST_Fields2013-linear/results.csv`.
+file `results/BLAT_ECOLX_Ranganathan2015-2500/results.csv`.
 
 As another example that involves both evolutionary and assay-lablled data, here
 we show the process to evaluate the augmented Potts model on the same protein.
@@ -98,16 +92,16 @@ MSAs can be retrieved by jackhmmer search (see the jackhmmer search section).
 
 From the MSA, first run PLMC to estimate the couplings model:
 ```
-    bash scripts/plmc.sh PABP_YEAST PABP_YEAST_Fields2013-linear 
+    bash scripts/plmc.sh BLAT_ECOLX BLAT_ECOLX_Ranganathan2015-2500 
 ```
-The resulting models are saved at `inference/PABP_YEAST_Fields2013-linear/plmc`.
+The resulting models are saved at `inference/BLAT_ECOLX_Ranganathan2015-2500/plmc`.
 
 Then, similar to the one-hot linear model evaluation, run:
 ```
-    python src/evaluate.py PABP_YEAST_Fields2013-linear ev+onehot --n_seeds=20 --n_threads=1 --n_train=240
+    python src/evaluate.py BLAT_ECOLX_Ranganathan2015-2500 ev+onehot --n_seeds=20 --n_threads=1 --n_train=240
 ```
 The evaluation should finish in a few minutes, and all results will be saved to
-`results/PABP_YEAST_Fields2013-linear/results.csv`.
+`results/BLAT_ECOLX_Ranganathan2015-2500/results.csv`.
 
 Here, `ev+onehot` refers to the augmented Potts model. Other models and data
 sets can also be similarly evaluated as long as the corresponding prerequisite
@@ -132,13 +126,15 @@ sequences into train and validation with `scripts/randsplit.py`.
 full length target sequences is at `target_seqs.fasta` and `target_seqs.txt`.
 
 ## Fitness data
-In the `data` directory, each subdirectory (e.g. `data/sarkisyan`) represents a
-dataset of interest. In the subdirectory, there are two key files.
+In the example data set in the `data` directory (and also for all other data sets
+available on Dryad), each subdirectory (e.g. `data/BLAT_ECOLX_Ranganathan2015-2500`)
+represents a data set of interest. In the subdirectory, there are two key files.
 - `wt.fasta` documents the WT sequence.
 - `data.csv` contains three columns: `seq`, `log_fitness`, `n_mut`.
   `seq` is the sequence with mutation, and should be the same length as WT seq.
   `log_fitness` is the log enrichment ratio or other log-scale fitness values,
-  where higher is better.
+  where higher is better. Although referred to as `log_fitness` here, this
+  corresponds to `fitness` in the paper.
   `n_mut` is how many mutations away the sequence is from WT, where 0 indicates WT.
 
 ## Density models
@@ -178,13 +174,11 @@ an MSA file as `seqspath`.
 evotuned unirep model.
 
 ## Predictors
-Each type of predictor is represented by a Python class.
+Each type of predictor is represented by a Python class in `src/predictors`.
+A predictor class represents a prediction strategy for protein fitness that
+depends on evolutionary data, assay-labelled data, or both.
 The base predictor class, `BasePredictor` is defined at `src/predictors/base_predictors.py`.
 All predictor classes inherit from this class and have the `train` and `predict` methods.
 The `JointPredictor` class is a meta predictor that combines the features from multiple
 existing predictor classes, and can be easily specified by the sub-predictor names.
 See `src/predictors/__init__.py` for a full list of implemented predictors.
-
-## Results 
-The raw results for all methods and all data sets are provided in the
-`results/all_results.csv` file.
